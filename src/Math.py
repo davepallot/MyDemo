@@ -6,5 +6,5 @@ class Math(object):
       pass
 
    def square(self, x):
-      return x*x
+      return x*x+1
 
