@@ -2,7 +2,7 @@ import sys
 
 # Function by Dpallot
 class Math(object):
-   def __init__(self)
+   def __init__(self):
       pass
 
    def square(self, x):
