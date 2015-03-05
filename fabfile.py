@@ -1,5 +1,9 @@
 """
-Fabric file for building installing and testing python projects
+Fabric file for building installing and testing Python projects
+
+Authors: A Wicenec and D Pallot
+
+ICRAR 2015
 """
 import os
 import time, urllib
@@ -12,27 +16,19 @@ from fabric.decorators import task, serial
 from fabric.operations import prompt
 from fabric.utils import puts, abort, fastprint
 
+
 APP_PYTHON_VERSION = '2.7'
 APP_PYTHON_URL = 'https://www.python.org/ftp/python/2.7.8/Python-2.7.8.tgz'
 VIRTUALENV_URL = 'https://pypi.python.org/packages/source/v/virtualenv/virtualenv-12.0.7.tar.gz'
 
 
-PROJ_DIR = 'projects'
-APP_DIR = 'MyDemo'
-GIT_PROJECT = 'MyDemo'
-UNIT_TEST_ENTRYPOINT = 'test/TestMath.py'
-
-PYTHON_PACKAGES = [
-        'zc.buildout',
-        'pycrypto',
-        'Fabric',
-        'bottle',
-        ]
+VENV_DIR = 'projects' # virtual env directory relative to current user home
+PROJECT = 'MyDemo' # project name
 
 
 def set_env():
     env.HOME = run("echo ~")
-    env.APP_DIR_ABS = "{0}/{1}/{2}".format(env.HOME, PROJ_DIR, APP_DIR)
+    env.APP_DIR_ABS = "{0}/{1}/{2}".format(env.HOME, VENV_DIR, PROJECT)
 
 
 def to_boolean(choice, default=False):
@@ -112,6 +108,33 @@ def virtualenv(command):
 
 
 @task
+def python_setup():
+    """
+        Ensure that there is the right version of python available
+        If not install it from scratch in user directory.
+        
+        INPUT:
+        None
+        
+        OUTPUT:
+        None
+        """
+    set_env()
+    
+    with cd('/tmp'):
+        run('wget --no-check-certificate -q {0}'.format(APP_PYTHON_URL))
+        base = os.path.basename(APP_PYTHON_URL)
+        pdir = os.path.splitext(base)[0]
+        run('tar -xzf {0}'.format(base))
+    ppath = run('echo $PWD') + '/python'
+    with cd('/tmp/{0}'.format(pdir)):
+        #run('./configure --prefix {0};make;make install'.format(ppath))
+        run('./configure --prefix {0};make'.format(ppath))
+        ppath = '{0}/bin/python{1}'.format(ppath,APP_PYTHON_VERSION)
+    env.PYTHON = ppath
+
+
+@task
 def virtualenv_setup():
     """
     setup virtualenv with the detected or newly installed python
@@ -119,7 +142,11 @@ def virtualenv_setup():
 
     set_env()
     
-    check_python()
+    ppath = check_python()
+    if not ppath:
+        python_setup()
+    else:
+        env.PYTHON = ppath
 
     if not check_dir(env.APP_DIR_ABS):
         with cd('/tmp'):
@@ -139,7 +166,7 @@ def install_egg():
 
 
 def uninstall_egg():
-    virtualenv('/usr/bin/yes | pip uninstall {0}'.format(GIT_PROJECT))
+    virtualenv('/usr/bin/yes | pip uninstall {0}'.format(PROJECT))
 
 
 def build_egg():
@@ -149,13 +176,7 @@ def build_egg():
 
 def invoke_tests():
     reploc = os.path.dirname(os.path.abspath(__file__))
-    virtualenv('cd {0}; python {1}'.format(reploc, UNIT_TEST_ENTRYPOINT))
-
-
-def package_install():
-    for p in PYTHON_PACKAGES:
-        print p
-        virtualenv('pip install {0}'.format(p))
+    virtualenv('cd {0}; python {0}/setup.py test'.format(reploc))
 
 
 @task
