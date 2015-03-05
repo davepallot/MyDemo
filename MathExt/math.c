@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 uint32_t square(uint32_t a) {
-	return a*a+1;
+	return a*a;
 }
 
 static PyObject* MathExt_square(PyObject *self, PyObject *args) {
