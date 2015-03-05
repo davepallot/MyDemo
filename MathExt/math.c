@@ -3,7 +3,7 @@
 
 uint32_t square(uint32_t a) {
 	return a*a;
-}
+
 
 static PyObject* MathExt_square(PyObject *self, PyObject *args) {
     uint32_t val = 0;
