@@ -171,6 +171,7 @@ def uninstall_egg():
 
 def build_egg():
     reploc = os.path.dirname(os.path.abspath(__file__))
+    virtualenv('cd {0}; python {0}/setup.py build'.format(reploc))
     virtualenv('cd {0}; python {0}/setup.py bdist_egg'.format(reploc))
 
 
